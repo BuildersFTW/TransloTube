@@ -108,10 +108,19 @@ const quizContent = () => {
         }
         return res.json();
       })
-      .then((data) => JSON.parse(data.content))
-      .then((question) => {
+      .then((data) => {
+        let question;
+        try {
+          question = JSON.parse(data.content);
+        } catch (e) {
+          question = data.content;
+        }
         messageElement.textContent = question.question;
-        let answer = question.correct_answer;
+
+        let answer =
+          question.correct_answer.length > 1
+            ? question.correct_answer[0]
+            : question.correct_answer;
         let solution = question.explanation;
         btnList = [];
         question.options.forEach((option, i) => {
@@ -120,6 +129,7 @@ const quizContent = () => {
           optionBtn.classList.add("options-btn");
           optionBtn.textContent = option;
           if (answer === option[0]) {
+            optionBtn.classList.add("correct-hide");
             optionBtn.onclick = () =>
               checkOption(
                 "correct",
@@ -134,7 +144,7 @@ const quizContent = () => {
               checkOption(
                 "wrong",
                 optionBtn,
-                quizLi.querySelectorAll("button")[answer.charCodeAt(0) % 65],
+                undefined,
                 (btnList = btnList),
                 (solution = solution),
                 (quizChat = quizLi)
@@ -161,7 +171,7 @@ const quizContent = () => {
     solution,
     quizChat
   ) => {
-    console.log(quizChat);
+    correctBtn = document.getElementsByClassName("correct-hide")[0];
     if (result === "correct") {
       buttonElement.innerHTML += "<br><b>CORRECT</b>";
       buttonElement.style.backgroundColor = "#6abf4b";
@@ -170,7 +180,7 @@ const quizContent = () => {
       buttonElement.style.backgroundColor = "#e74c3c";
       correctBtn.style.backgroundColor = "#6abf4b";
     }
-    console.log("btnlist: " + btnList);
+    correctBtn.classList.remove("correct-hide");
     for (let i = 0; i < btnList.length; i++) {
       btnList[i].onclick = null;
       btnList[i].disabled = true;

@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from urllib.parse import urlparse, parse_qs
 from django.views.decorators.csrf import csrf_exempt
 import json
+import time
 from . import falcon
 from asgiref.sync import sync_to_async
 
@@ -38,6 +39,7 @@ async def watch(request):
     yt_link = request.GET.get('link')
     target_language = request.GET.get('language')
     voiceover_gender = request.GET.get('voiceoverGender')
+    
 
     if not yt_link or not target_language:
         return HttpResponse("400 - Bad Request: Missing 'link' or 'language' parameter")
@@ -67,7 +69,7 @@ async def watch(request):
     context['groupedSentences'] = json.dumps(grouped_sentences)
 
     if original_lang != target_language:
-    
+        
         translated_transcript = await get_translated_transcript(grouped_sentences[:30], original_lang, target_language)
         await get_voiceover(
             vid,
@@ -79,7 +81,7 @@ async def watch(request):
         context['playVoiceover'] = "1"
     else:
         context['playVoiceover'] = "0"
-
+    time.sleep(3)
 
     return render(request, 'watch.html', context)
 

@@ -294,47 +294,77 @@ def quizMCQ(groupedSentences, targetLang):
     sentences = [entry['text'] for entry in groupedSentences]  # Content of the Transcribe
     print(sentences)
 
-    systemPrompt = """Task: Generate a Multiple-Choice Question (MCQ) from Given Text
+    systemPrompt = """Given a detailed text content, generate a high-quality multiple-choice question (MCQ) to assess understanding of key information from the passage.
 
-Input: You will be provided with a detailed text content enclosed in triple backticks (```).
+Steps to Follow:
 
-Objective: Carefully analyze the given text and create one high-quality multiple-choice question that accurately assesses understanding of key information from the passage.
+Analyze the Text: Thoroughly read the provided text to comprehend the main ideas and important information.
 
-MCQ Requirements:
-1. Question: Clear, concise, and directly related to important information in the text.
-2. Options: Provide exactly four options, labeled A, B, C, and D.
-3. Correct Answer: Ensure one option is unambiguously correct based on the text.
-4. Distractors: Other options should be plausible but clearly incorrect based on the text.
+Formulate the Question: Create a clear and concise question that directly relates to significant information in the text. The question should test comprehension of key concepts rather than trivial details.
 
-Output Format: Present the MCQ in the following JSON and ONLY JSON structure:
+Generate Options: Provide exactly four answer choices labeled A, B, C, and D. Ensure that one option is unambiguously correct based on the text, while the other three are plausible distractors but clearly incorrect according to the text.
 
+Determine the Correct Answer: Identify which option is correct and ensure it is based on the text content.
+
+Provide Explanation: Write a detailed explanation justifying why the correct answer is right and why the other options are incorrect, citing relevant parts of the text.
+
+Output Format:
+
+Present the MCQ in the following JSON structure:
+
+```
 {
-  "question": "Your question here",
+  "question": "<Your question here>",
   "options": [
-    "A. First option",
-    "B. Second option",
-    "C. Third option",
-    "D. Fourth option"
+    "A. <First option>",
+    "B. <Second option>",
+    "C. <Third option>",
+    "D. <Fourth option>"
   ],
-  "correct_answer": "A, B, C, or D",
-  "explanation": "Detailed explanation of why the correct answer is right and why other options are incorrect, citing relevant parts of the text."
+  "correct_answer": "<Correct Option Letter (A/B/C/D)>",
+  "explanation": "<Detailed explanation of why the correct answer is right and why other options are incorrect, citing relevant parts of the text.>"
 }
 
+```
+
 Additional Guidelines:
-1. Focus on testing comprehension of important concepts, not trivial details.
-2. Ensure the question and all options are grammatically correct and free of spelling errors.
-3. Avoid absolute terms like "always" or "never" unless directly supported by the text.
-4. Make sure distractors are plausible to someone who hasn't fully understood the text.
-5. The explanation should be thorough, referencing specific parts of the text to justify the correct answer and explain why other options are incorrect.
+
+**Focus on Key Concepts**: Ensure the question tests understanding of important concepts from the text.
+**Clarity and Accuracy**: The question and all options must be grammatically correct and free of spelling errors.
+**Plausible Distractors**: The distractors should be plausible to someone who hasn't fully understood the text but incorrect based on the text.
+**Explanation Detail**: Provide a thorough explanation referencing specific parts of the text to justify the correct answer and explain why other options are incorrect.
+**Options Lettering**: Options should strictly start with A/B/C/D 
+
+Example Process:
+
+**Analyze the Text**: Identify significant themes or topics.
+**Formulate the Question**: Create a clear and concise question.
+**Generate Options**: Provide four answer choices.
+**Determine the Correct Answer**: Ensure one option is correct.
+**Provide Explanation**: Write a detailed explanation.
+
+The final JSON structure should be:
+
+
+{
+  "question": "<Your question here>",
+  "options": [
+    "A. <First option>",
+    "B. <Second option>",
+    "C. <Third option>",
+    "D. <Fourth option>"
+  ],
+  "correct_answer": "<Correct Option Letter (A/B/C/D)>",
+  "explanation": "<Detailed explanation of why the correct answer is right and why other options are incorrect, citing relevant parts of the text.>"
+}
+
+This format ensures that the MCQ task prompt is clear, structured, and follows a logical process similar to the provided example.
 
 The text Content:\n
-```
+
 """
     messages = [{"role": "system", "content": systemPrompt}]
-    example = [{"role": "user", "content": "Generate a MCQ question with 4 options, provide the answer and solution in JSON. Keep the JSON keys and options 1, 2, 3, 4 in English and the Langauge: English."},
-               {"role": "assistant",
-                "content": '{"question": "Question goes here", "options": ["1. Option 1 here.", "2. Option 2 here.", "3. Option 3 here.", "4. Option 4 here."], "answer": "1, 2, 3, or 4", "solution": "Explanation of the answer here.'}]
-
+    
     #messages.extend(example)
     # Adding all the Transcribe to Messages and the User's Question at the end as userQn
     chunk_size = 5
@@ -342,7 +372,7 @@ The text Content:\n
         chunk = sentences[i:i + chunk_size]
         messages[0]['content']+= " ".join(chunk)
         #messages.append({"role": "user", "content": " ".join(chunk)})
-    messages[0]['content']+="```"
+    #messages[0]['content']+="```"
     messages.append({"role": "user",
                 "content": f"Generate a MCQ question with 4 options, provide the answer and solution in JSON. Keep the JSON keys and options 1, 2, 3, 4 in English and the Langauge: {targetLang}."})
 

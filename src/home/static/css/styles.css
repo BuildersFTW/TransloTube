@@ -240,7 +240,9 @@ transition: all 0.3s;
     top: 1rem;
     height: 100%;
     box-sizing: border-box;
+    height: 100%;
     flex: 1;
+    max-height: 493.33px;
     background-color: #454545;
     border-radius: 0.5rem;
 }
@@ -254,7 +256,7 @@ transition: all 0.3s;
     list-style: none;
     overflow-y: auto;
     background-color: #2f2f2f;
-    flex: 1;
+    height:100%;
 }
    
 .chatbox li {
