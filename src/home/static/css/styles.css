@@ -163,6 +163,7 @@ transition: all 0.3s;
     margin: 1rem; 
     padding: 1rem;
     border-radius: 1rem;
+    height: calc(100vh - 2rem);
     background-color: #2f2f2f;
 }
 
@@ -184,11 +185,12 @@ transition: all 0.3s;
 
 .content {
     gap: 1rem;
+    height: 100%;
 }
 
 #player {
     border-radius: 0.5rem;
-    height: 450px;
+    height: 100%;
     width: 800px;
 }
 
@@ -236,7 +238,7 @@ transition: all 0.3s;
     position: -webkit-sticky;
     position: sticky;
     top: 1rem;
-    height: calc(100vh - 2rem);
+    height: 100%;
     box-sizing: border-box;
     flex: 1;
     background-color: #454545;
@@ -264,6 +266,8 @@ transition: all 0.3s;
     padding: 0.5rem;
     border-radius: 0.25rem;
     max-width: 80%;
+    font-size: 14px;
+    font-weight: 500;
     word-wrap: break-word;
 }
    

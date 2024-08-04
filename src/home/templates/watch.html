@@ -4,7 +4,7 @@
 
 <div style="display:none;" id="data" data-grouped-sentences="{{groupedSentences}}", data-target-language="{{targetLang}}"></div>
 
-<div class="content-container d- flex-column">
+<div class="content-container d-flex flex-column">
     <div class="options d-flex">
         <div>
             <a href="/"><i class="fa-solid fa-arrow-left-long"></i></a>
@@ -14,7 +14,7 @@
         <div class="d-flex flex-column gap">
 
             <div id="player" vid="{{ vid }}" playvoiceover="{{ playVoiceover }}"></div>
-            <div class="notes font-poppins">
+            <!--div class="notes font-poppins">
                 <div class="d-flex justify-space-between">
                     <h2>Notes</h2>
                     <button id="copyText" onclick="copyToClipboard()">Copy <i class="fa-solid fa-copy"></i></button>
@@ -25,9 +25,9 @@
                         {{ notes }}
                     </md-block>
                 </div>
-            </div>
+            </div-->
         </div>
-        <div class="chatarea d-flex flex-column">
+        <div class="chatarea d-flex flex-column font-poppins">
             <ul class="chatbox">
                 <li class="chat-incoming chat">
                     <p>Hey! How can I assist you today?</p>

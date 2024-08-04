@@ -34,14 +34,10 @@ async def get_translated_transcript(grouped_sentences, original_lang, target_lan
 async def get_voiceover(vid, translated_transcript, original_lang, target_lang, voiceover_gender):
     return await sync_to_async(falcon._getVoiceOver)(vid, translated_transcript, original_lang, target_lang, voiceover_gender)
 
-async def write_notes(grouped_sentences, notes_lang):
-    return await sync_to_async(falcon.writeNotes)(grouped_sentences, notes_lang)
-
 async def watch(request):
     yt_link = request.GET.get('link')
     target_language = request.GET.get('language')
     voiceover_gender = request.GET.get('voiceoverGender')
-    notes_lang_pref = request.GET.get('notesLang', 'original')
 
     if not yt_link or not target_language:
         return HttpResponse("400 - Bad Request: Missing 'link' or 'language' parameter")
@@ -84,9 +80,6 @@ async def watch(request):
     else:
         context['playVoiceover'] = "0"
 
-    notes_lang = original_lang if notes_lang_pref == "original" else target_language
-    notes = await write_notes(grouped_sentences, notes_lang)
-    context['notes'] = notes
 
     return render(request, 'watch.html', context)
 
