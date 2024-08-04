@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div style="display:none;" id="data" data-grouped-sentences="{{groupedSentences}}", data-target-language="{{targetLang}}"></div>
+
+<div class="content-container d- flex-column">
+    <div class="options d-flex">
+        <div>
+            <a href="/"><i class="fa-solid fa-arrow-left-long"></i></a>
+        </div>
+    </div>
+    <div class="content d-flex">
+        <div class="d-flex flex-column gap">
+
+            <div id="player" vid="{{ vid }}" playvoiceover="{{ playVoiceover }}"></div>
+            <div class="notes font-poppins">
+                <div class="d-flex justify-space-between">
+                    <h2>Notes</h2>
+                    <button id="copyText" onclick="copyToClipboard()">Copy <i class="fa-solid fa-copy"></i></button>
+                </div>
+                    
+                <div class="content-section" id="notes-content">
+                    <md-block class="font-poppins">
+                        {{ notes }}
+                    </md-block>
+                </div>
+            </div>
+        </div>
+        <div class="chatarea d-flex flex-column">
+            <ul class="chatbox">
+                <li class="chat-incoming chat">
+                    <p>Hey! How can I assist you today?</p>
+                </li>
+            </ul>
+            <div class="chat-input">
+                <textarea rows="0" cols="17"
+                        placeholder="Enter a message..."></textarea>
+                <button id="sendBTN"><i class="fa-solid fa-angles-right fa-2x"></i></button>
+            </div>
+            <hr>
+            <div class="prompt-suggestions">
+                <button id="quiz-me" onclick="quizContent()">Quiz Me</button>
+                <button id="quiz-solution" class="quiz-btn" onclick="">Show Solution</button>
+                <button id="quiz-next" class="quiz-btn" onclick="">Next Question</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="module" src="https://md-block.verou.me/md-block.js"></script>
+
+
+<script>
+    var tag = document.createElement('script');
+
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    // 3. This function creates an <iframe> (and YouTube player)
+    //    after the API code downloads.
+    var player;
+    var video_id = document.getElementById('player').getAttribute("vid");
+    var playVoiceover = parseInt(document.getElementById('player').getAttribute("playvoiceover"));
+    function onYouTubeIframeAPIReady() {
+        
+        console.log("hello"+ video_id);
+        player = new YT.Player('player', {
+            height: '450',
+            width: '800',
+            videoId: video_id,
+            playerVars: {
+            'playsinline': 1,
+            'mute': playVoiceover
+            },
+            events: {
+            'onStateChange': onPlayerStateChange,
+            'onReady': onPlayerReady
+            }
+        });
+        syncAudioWithVideo();
+    }
+
+    
+    
+
+
+    var done = false;
+    var audio;
+    function getAudio(){
+        var request = new XMLHttpRequest();
+        request.open("GET", `/static/audio/${video_id}_voiceover.mp3`, true);
+        request.responseType = "blob";    
+        request.onload = function() {
+            if (this.status == 200) {
+                audio = new Audio(URL.createObjectURL(this.response));
+                audio.load();
+            }
+        }
+        request.send();
+    }
+    getAudio()
+
+    
+
+    function onPlayerStateChange(event) {
+        if (playVoiceover){
+            switch (event.data) {
+                case YT.PlayerState.PAUSED:
+                    audio.pause();
+                    break;
+                case YT.PlayerState.PLAYING:
+                    if (audio.currentTime >= audio.duration) {
+                        audio.currentTime = 0;
+                    }
+
+                    audio.play();
+                    break;
+                case YT.PlayerState.ENDED:
+                    audio.pause();
+                    break;
+            }
+            syncAudioWithVideo();
+        }
+
+    }
+    function syncAudioWithVideo() {
+        console.log("Hello World")
+        if (player && player.getCurrentTime) {
+            var videoTime = player.getCurrentTime();
+            if (videoTime < audio.duration) {
+                console.log("video time: " + videoTime)
+                audio.currentTime = videoTime;
+            } else {
+                audio.currentTime = audio.duration;
+            }
+            console.log(audio.currentTime);
+            console.log(videoTime);
+        } else {
+            console.log("sync did not trigger")
+        }
+    }
+
+    audio.addEventListener('play', function() {
+            if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+                player.playVideo();
+            }
+        });
+
+    audio.addEventListener('pause', function() {
+        if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+            player.pauseVideo();
+        }
+    });
+
+    function forceMutePlayer() {
+        if (playVoiceover){
+            setInterval(function() {
+                if (player.isMuted && !player.isMuted()) {
+                    player.mute();
+                }
+            }, 100); // Check and force mute every 100 milliseconds
+        }
+                
+    }
+
+    function onPlayerReady(event) {
+        forceMutePlayer();
+    }
+
+    
+</script>
+{% endblock content %}

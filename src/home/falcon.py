@@ -1,0 +1,462 @@
+import random
+from youtube_transcript_api import YouTubeTranscriptApi
+from pydub import AudioSegment
+from google.cloud import texttospeech
+import numpy as np
+from ai71 import AI71
+from dotenv import dotenv_values
+import json
+import re
+from deep_translator import GoogleTranslator
+
+
+config = dotenv_values('../.env')
+AI71_API_KEY = config['AI71_APIKEY']
+client = AI71(AI71_API_KEY)
+supportedLang = ['English', 'Hindi', 'Spanish', 'French', 'German', 'Chinese', 'Arabic', 'Italian', 'Russian', 'Japanese', 'Czech', 'Portuguese']
+
+def getTranscript(videoID):
+
+    try:
+        transcriptList = YouTubeTranscriptApi.list_transcripts(videoID)
+
+        try:
+            # Pick the auto-generated language for the original language
+            for transcript in transcriptList:
+                if transcript.is_generated:
+                    videoLang = str(transcript.language).split()[0]
+
+            # Check for the original language and fetch the transcript
+            for transcript in transcriptList:
+                if transcript.language.split()[0] == videoLang:
+                    print(transcript.fetch())
+
+                    pattern = re.compile(r'\(.*?\)')
+
+                    transcriptOriginal = transcript.fetch()
+                    for entry in transcriptOriginal:
+                        if 'Transcriber: ' in entry['text']:
+                            transcriptOriginal.remove(entry)
+                        entry['text'] = entry['text'].replace('\n', ' ')
+                        entry['text'] = pattern.sub('', entry['text'])  # Remove text before and including ':'
+                        parts = entry['text'].split(':', 1)  # Split text by the first colon only
+                        if len(parts) > 1:
+                            entry['text'] = parts[1].strip()
+
+
+                    return videoLang, transcriptOriginal
+
+        except:
+            for transcript in transcriptList:
+                videoLang = str(transcript.language).split()[0]
+
+                pattern = re.compile(r'\(.*?\)')
+
+                transcriptOriginal = transcript.fetch()
+                for entry in transcriptOriginal:
+                    if 'Transcriber: ' in entry['text']:
+                        transcriptOriginal.remove(entry)
+                    entry['text'] = entry['text'].replace('\n', ' ')
+                    entry['text'] = pattern.sub('', entry['text'])  # Remove text before and including ':'
+                    parts = entry['text'].split(':', 1)  # Split text by the first colon only
+                    if len(parts) > 1:
+                        entry['text'] = parts[1].strip()
+
+                return videoLang, transcriptOriginal
+
+    except Exception as e:
+        return False, None
+
+def groupSentences(transcription):
+    #print("In GroupSentences")
+    groupedSentences = []
+    current_text = ''
+    current_start = 0
+    current_duration = 0
+    sentence_started = False
+    special_marker_pattern = re.compile(r'\[[a-zA-Z]*\]|\([a-zA-Z]*\)|[A-Za-z]*:')
+
+    for entry in transcription:
+        text = entry['text']
+        start = entry['start']
+        duration = entry['duration']
+
+        if not sentence_started:
+                current_start = start
+                sentence_started = True
+
+        
+        
+        # If the current_text is empty, start a new group
+        if not current_text:
+
+            current_text = text
+            current_start = start
+            current_duration = duration
+        else:
+            # Append the text to the current group
+            current_text += " " + text
+            current_duration += duration
+        
+        if not current_text:
+            continue
+
+        if current_text[-1] in '.!?' or special_marker_pattern.fullmatch(text):
+            clean_text = special_marker_pattern.sub('', current_text)
+            if not clean_text:
+                continue
+            groupedSentences.append({
+                'text': clean_text.strip(),
+                'start': current_start,
+                'duration': current_duration
+            })
+            current_text = ''
+            current_duration = 0
+            sentence_started = False
+            
+        
+
+    if current_text:  # add any remaining sentence
+        groupedSentences.append({
+            'text': current_text.strip(),
+            'start': current_start,
+            'duration': current_duration
+        })
+    #print(groupedSentences)
+
+    return groupedSentences
+
+
+def falconTranslate(text, originalLang, targetLang):
+
+    languages = {"Hindi": {"text": "मुझे परियोजना की प्रगति पर एक रिपोर्ट देनी है, जिसमें आई चुनौतियाँ और उन्हें हल करने के तरीके बताने हैं।"},
+                 "English": {"text": "I need to submit a comprehensive report on the project's progress, including the challenges faced and the strategies implemented to overcome them."},
+                 "Spanish": {"text": "Debo presentar un informe sobre el progreso del proyecto, con los desafíos y las estrategias que usamos para superarlos."},
+                 "French": {"text": "Je dois soumettre un rapport sur l’avancement du projet, avec les défis rencontrés et les solutions mises en œuvre."},
+                 "German": {"text": "Ich muss einen Bericht über den Fortschritt des Projekts vorlegen, der die Herausforderungen und die angewandten Lösungen enthält."},
+                 "Chinese": {"text": "我需要提交一份关于项目进展的全面报告，包括遇到的挑战和为克服这些挑战而实施的策略。"},
+                 "Arabic": {"text": "يجب عليّ تقديم تقرير عن تقدم المشروع، مع ذكر التحديات والحلول المستخدمة."},
+                 "Italian": {"text": "Devo presentare una relazione sullo stato di avanzamento del progetto, con le sfide affrontate e le soluzioni adottate."},
+                 "Russian": {"text": "Мне нужно представить подробный отчет о ходе проекта, включая встреченные трудности и примененные стратегии для их преодоления."},
+                 "Japanese": {"text": "プロジェクトの進捗状況についての包括的な報告書を提出する必要があります。これには、直面した課題とそれを克服するために実施した戦略が含まれます。"},
+                 "Portuguese": {"text": "Preciso enviar um relatório abrangente sobre o progresso do projeto, incluindo os desafios enfrentados e as estratégias implementadas para superá-los."},
+                 "Czech": {"text": "Potřebuji předložit komplexní zprávu o pokroku projektu, včetně výzev, kterým čelím, a strategií implementovaných k jejich překonání."}}
+
+    originalText = languages[originalLang]["text"]
+    translatedText =  languages[targetLang]["text"]
+
+    res = client.chat.completions.create(
+        model="tiiuae/falcon-180B-chat",
+        max_tokens=512,
+        messages=[
+            {"role": "system", "content": "You are a translator fluent in the following languages: English, Hindi, Spanish, French, German, Chinese, Arabic Italian, Russian, Japanese, Czech, and Portuguese. Translate the given text into simple words that are easy to understand in an explanation style. Keep your responses as short as possible."},
+            {"role": "user", "content": f"Translate to {targetLang}: '{originalText}'"},
+            {"role": "assistant", "content": translatedText},
+            {"role": "user", "content": f"Translate to {targetLang}: '{text}'"},
+        ],
+    ).json()
+
+    translation = json.loads(res)['choices'][0]['message']['content']
+    translation = translation.lstrip()
+    translation = re.sub(r' \(.*?\)', '', translation)
+    translation = re.sub(r'\nUser:', '', translation)
+    return translation
+
+def getTranslatedTranscript(segments, originalLang, targetLang):
+
+    translated_segments = []
+    for segment in segments:
+        translated_text = falconTranslate(segment['text'], originalLang, targetLang)
+        translated_segments.append({
+            'text': translated_text,
+            'start': segment['start'],
+            'duration': segment['duration']
+        })
+    return translated_segments
+
+def getVoiceover(text, targetL, voiceID, file_path, speed=1.1):
+    client = texttospeech.TextToSpeechClient.from_service_account_json('../vigilant-shift-387520-8b24c9f46e78.json')
+
+    voiceID = 'male' if voiceID == 1 else 'female'
+
+    languages = {'Hindi': {'language_code': 'hi-IN', 'male': 'hi-IN-Wavenet-B', 'female': 'hi-IN-Wavenet-A'},
+                 'English': {'language_code': 'en-US', 'male': 'en-US-Wavenet-A', 'female': 'en-US-Wavenet-C'},
+                 'Spanish': {'language_code': 'es-ES', 'male': 'es-ES-Wavenet-B', 'female': 'es-ES-Wavenet-A'},
+                 'French': {'language_code': 'fr-FR', 'male': 'fr-FR-Wavenet-B', 'female': 'fr-FR-Wavenet-A'},
+                 'German': {'language_code': 'de-DE', 'male': 'de-DE-Wavenet-B', 'female': 'de-DE-Wavenet-A'},
+                 'Chinese': {'language_code': 'hi-IN', 'male': 'cmn-CN-Wavenet-B', 'female': 'cmn-CN-Wavenet-A'},
+                 'Arabic': {'language_code': 'ar-XA', 'male': 'ar-XA-Wavenet-B', 'female': 'ar-XA-Wavenet-A'},
+                 'Italian': {'language_code': 'it-IT', 'male': 'it-IT-Wavenet-C', 'female': 'it-IT-Wavenet-A'},
+                 'Russian': {'language_code': 'ru-RU', 'male': 'ru-RU-Wavenet-B', 'female': 'ru-RU-Wavenet-A'},
+                 'Japanese': {'language_code': 'ja-JP', 'male': 'ja-JP-Wavenet-C', 'female': 'ja-JP-Wavenet-A'},
+                 'Portuguese': {'language_code': 'pt-BR', 'male': 'pt-BR-Wavenet-B', 'female': 'pt-BR-Wavenet-A'},
+                 'Czech': {'language_code': 'ko-KR', 'male': 'ko-KR-Wavenet-C', 'female': 'ko-KR-Wavenet-A'}}
+
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16,
+        speaking_rate=speed
+    )
+
+    voice = texttospeech.VoiceSelectionParams(
+        language_code=languages[targetL]['language_code'],
+        name=languages[targetL][voiceID]
+    )
+
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+
+    response = client.synthesize_speech(
+        input=synthesis_input,
+        voice=voice,
+        audio_config=audio_config
+    )
+
+    with open(file_path, 'wb') as outfile:
+        outfile.write(response.audio_content)
+
+def adjustAudioSpeed(audio_path, target_duration, text, targetL, voiceID):
+    audio = AudioSegment.from_file(audio_path)
+    current_duration = len(audio) / 1000  # Convert to seconds
+    #print(current_duration, target_duration, f'Speed: {round(current_duration / target_duration, 2)}')
+
+    speed_change = current_duration / target_duration
+    #if speed_change <= 0.9:
+    #    speed_change = 0.9
+    #    adjusted_audio = audio.speedup(playback_speed=speed_change)
+    #    adjusted_audio.export(audio_path, format="mp3")
+
+    if speed_change > 1:
+        getVoiceover(text, targetL, voiceID, audio_path, speed=speed_change)
+    elif speed_change <= 0.9:
+        getVoiceover(text, targetL, voiceID, audio_path, speed=0.9)
+
+
+
+def writeNotes(groupedSentences, targetLang):
+    languages = {'Arabic': 'ar', 'Chinese': 'zh-CN', 'English': 'en', 'French': 'fr',
+                 'German': 'de', 'Hindi': 'hi', 'Japanese': 'ja', 'Portuguese': 'pt',
+                 'Russian': 'ru', 'Spanish': 'es', 'Italian': 'it', 'Czech': 'cs'}
+
+    notes = ""
+    sentences = [entry['text'] for entry in groupedSentences]
+
+    systemPrompt = "Please turn the following YouTube video transcription into easy-to-read notes. Summarize the content and format it in HTML. Make the notes simple and clear by: 1. Summarizing: Capture the main ideas and key points. 2. Simplifying: Use simple language and don't use first person perspective. 3. Highlighting: Emphasize important points. 4. Formatting: - Use bullet points for details and # for titles. - Create subheadings for different sections. - Make sure the notes are well-organized and easy to follow. Output the notes in the following format: ## Subheading - Bullet Point 1 - Bullet Point 2 - Bullet Point 3"
+    userPrompt = "Please summarize the following part of the transcription of a video into clear, concise notes. Format the notes using HTML markdown, with well-organized subheadings (#) and bullet points (-). Make sure to use bullet points (-) and titles (#). Do not include Introduction or Conclusion as subheading, only topic related subheadings."
+
+    chunk_size = 5
+    for i in range(0, len(sentences), chunk_size):
+        chunk = sentences[i:i + chunk_size]
+        messages = [{"role": "system", "content": systemPrompt}, {"role": "user", "content": (" ".join(chunk))+"\n"+userPrompt}]
+
+
+        res = (client.chat.completions.create(
+            model="tiiuae/falcon-180B-chat",
+            messages=messages)
+        ).json()
+
+        res = json.loads(res)['choices'][0]['message']['content']
+        res = res.lstrip()
+        res = re.sub(r'\nUser:', '', res)
+
+        translateNotes = GoogleTranslator(source="auto", target=languages[targetLang]).translate(res)
+        notes += translateNotes
+
+    return notes
+
+def askQnA(groupedSentences, messageHistory, userQn):
+    # messageHistory - History of Messages you've saved. Make sure to save it in {} with role, user/assistant, content
+    # userQn - Question user asked at the end
+    sentences = [entry['text'] for entry in groupedSentences]
+
+    systemPrompt = "You will be provided with a large text. Your task is to read and understand the text thoroughly, and then answer questions related to it. When answering questions, ensure your responses are accurate, concise and contextual. Here is the large text:"
+    messages = [{"role": "system", "content": systemPrompt}]    # Default System Prompt for QnA
+
+    # Adding all the Transcribe to Messages
+    chunk_size = 5
+    for i in range(0, len(sentences), chunk_size):
+        chunk = sentences[i:i + chunk_size]
+        messages.append({"role": "user", "content": " ".join(chunk)})
+
+    # Add stored message history
+    #messages.extend(messageHistory)
+    messages.append({"role": "user", "content": userQn})
+
+    res = (client.chat.completions.create(
+        model="tiiuae/falcon-11b",
+        messages=messages)
+    ).json()
+
+    response = json.loads(res)['choices'][0]['message']['content']
+    response = response.lstrip()
+    response = re.sub(r'\nUser:', '', response)
+    return response
+
+def quizMCQ(groupedSentences, targetLang):
+    sentences = [entry['text'] for entry in groupedSentences]  # Content of the Transcribe
+    print(sentences)
+
+    systemPrompt = """Task: Generate a Multiple-Choice Question (MCQ) from Given Text
+
+Input: You will be provided with a detailed text content enclosed in triple backticks (```).
+
+Objective: Carefully analyze the given text and create one high-quality multiple-choice question that accurately assesses understanding of key information from the passage.
+
+MCQ Requirements:
+1. Question: Clear, concise, and directly related to important information in the text.
+2. Options: Provide exactly four options, labeled A, B, C, and D.
+3. Correct Answer: Ensure one option is unambiguously correct based on the text.
+4. Distractors: Other options should be plausible but clearly incorrect based on the text.
+
+Output Format: Present the MCQ in the following JSON and ONLY JSON structure:
+
+{
+  "question": "Your question here",
+  "options": [
+    "A. First option",
+    "B. Second option",
+    "C. Third option",
+    "D. Fourth option"
+  ],
+  "correct_answer": "A, B, C, or D",
+  "explanation": "Detailed explanation of why the correct answer is right and why other options are incorrect, citing relevant parts of the text."
+}
+
+Additional Guidelines:
+1. Focus on testing comprehension of important concepts, not trivial details.
+2. Ensure the question and all options are grammatically correct and free of spelling errors.
+3. Avoid absolute terms like "always" or "never" unless directly supported by the text.
+4. Make sure distractors are plausible to someone who hasn't fully understood the text.
+5. The explanation should be thorough, referencing specific parts of the text to justify the correct answer and explain why other options are incorrect.
+
+The text Content:\n
+```
+"""
+    messages = [{"role": "system", "content": systemPrompt}]
+    example = [{"role": "user", "content": "Generate a MCQ question with 4 options, provide the answer and solution in JSON. Keep the JSON keys and options 1, 2, 3, 4 in English and the Langauge: English."},
+               {"role": "assistant",
+                "content": '{"question": "Question goes here", "options": ["1. Option 1 here.", "2. Option 2 here.", "3. Option 3 here.", "4. Option 4 here."], "answer": "1, 2, 3, or 4", "solution": "Explanation of the answer here.'}]
+
+    #messages.extend(example)
+    # Adding all the Transcribe to Messages and the User's Question at the end as userQn
+    chunk_size = 5
+    for i in range(0, len(sentences), chunk_size):
+        chunk = sentences[i:i + chunk_size]
+        messages[0]['content']+= " ".join(chunk)
+        #messages.append({"role": "user", "content": " ".join(chunk)})
+    messages[0]['content']+="```"
+    messages.append({"role": "user",
+                "content": f"Generate a MCQ question with 4 options, provide the answer and solution in JSON. Keep the JSON keys and options 1, 2, 3, 4 in English and the Langauge: {targetLang}."})
+
+    res = (client.chat.completions.create(
+        model="tiiuae/falcon-180B-chat", temperature=0.3,
+        messages=messages)
+    ).json()
+
+    response = json.loads(res)['choices'][0]['message']['content']
+    response = response.lstrip()
+    response = re.sub(r'\nUser:', '', response)
+    return response
+
+
+
+def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, voiceID=1):
+    
+    combined_audio = AudioSegment.silent(duration=0)
+    print("in voiceover (translated Transcript): ", translatedTranscript)
+    for segment in translatedTranscript:
+        text = segment['text']
+        start_time = segment['start'] * 1000  # Convert to milliseconds
+        duration = segment['duration']
+
+        temp_audio_path = f".\\home\\static\\audio\\{videoID}_temp_audio.mp3"
+        getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
+
+        adjustAudioSpeed(temp_audio_path, duration, text, targetLanguage, voiceID)
+        audio_segment = AudioSegment.from_file(temp_audio_path)
+
+        silence_before = AudioSegment.silent(duration=start_time - len(combined_audio))
+        combined_audio += silence_before + audio_segment
+    voiceover_dir = f".\\home\\static\\audio\\{videoID}_voiceover.mp3"
+    combined_audio.export(voiceover_dir, format="mp3")
+
+    
+
+def main():
+    targetLanguage = 'Hindi'  #  Translation Language
+    summaryLanguage = 'Arabic'  # Chosen Language for Summary
+    voiceID = 1  # 0 for Female | 1 for Male | 2 for Bisexual 🙂
+    youtubeURL = 'https://www.youtube.com/watch?v=d_ixlCubqQw' #input('Enter YouTube URL: ')
+    videoID = youtubeURL.replace('https://www.youtube.com/watch?v=', '')
+
+    #print('Transcribing...')
+    transcript = getTranscript(videoID)
+    originalLang = transcript[0]
+
+    if originalLang in supportedLang:
+
+        print(f'Transcribe:\n{transcript[1]}\n')
+
+        print('Grouping Sentences...')
+        groupedSentences = groupSentences(transcript[1])
+        print(groupedSentences)
+
+        print(f'Translating {originalLang} --> {targetLanguage} (Falcon)...\n')
+        translatedTranscript = getTranslatedTranscript(groupedSentences, originalLang, targetLanguage)
+        print(f'Translated Transcript:\n{translatedTranscript}\n')
+
+        if originalLang != targetLanguage:
+
+            # - - - Produce Audio - - -
+
+            print(f'Producing Audio...')
+        
+            combined_audio = AudioSegment.silent(duration=0)
+    
+            for segment in translatedTranscript:
+                text = segment['text']
+                start_time = segment['start'] * 1000  # Convert to milliseconds
+                duration = segment['duration']
+    
+                temp_audio_path = "temp_audio.mp3"
+                getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
+    
+                adjustAudioSpeed(temp_audio_path, duration, text, targetLanguage, voiceID)
+                audio_segment = AudioSegment.from_file(temp_audio_path)
+    
+                silence_before = AudioSegment.silent(duration=start_time - len(combined_audio))
+                combined_audio += silence_before + audio_segment
+    
+            combined_audio.export(f'final_audio_{targetLanguage}.mp3', format="mp3")
+    
+            print(f'Completed! Saved as final_audio_{targetLanguage}.mp3')
+
+        # - - - Produce Notes - - -
+
+        if summaryLanguage == originalLang:
+            summary = writeNotes(groupedSentences, summaryLanguage)
+
+        else:
+            summary = writeNotes(translatedTranscript, summaryLanguage)
+
+        print(summary)
+
+        # - - - Ask QnA - - -
+
+        # Input your stored message history and user's question
+        messageHistory = []
+        userQn = 'What is Decoders?'
+
+        answerQnA = askQnA(groupedSentences, messageHistory, userQn)
+
+        print(answerQnA)
+
+        # - - - Quiz (Random) - - -
+
+        quizJSON = quizMCQ(groupedSentences, summaryLanguage)
+
+        print(quizJSON)
+
+    else:
+        print('Language is not Supported / Invalid')
+
+if __name__ == "__main__":
+    main()

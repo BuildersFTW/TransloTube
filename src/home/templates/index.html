@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{%load static%}
+{% block content %}
+    {% include 'navbar.html' %}
+    <div class="container">
+        <h1 class="font-poppins">
+            YouTube Videos<br>Now in YOUR Language
+        </h1>
+        <form id="form" action="watch">
+            <div class="search-container">
+                <div class="search-bar">
+                    <div class="dropdown font-poppins">
+                        <input type="hidden" name="language" id="languageInp" value="en">
+                        <span>Translate to (<p id="language">en</p>) <i class="fa-solid fa-chevron-down"></i></span>
+                        <div class="dropdown-content">
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('en')">English (en)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('hi')">हिन्दी (hi)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('es')">Español (es)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('fr')">Français (fr)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('de')">Deutsch (de)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('zh')">中文 (zh)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('ar')">العربية (ar)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('it')">Italiano (it)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('ru')">Русский (ru)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('ja')">日本語 (ja)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('cs')">Čeština (cs)</button>
+                            <button onsubmit="false" type="button" onclick="onLanguageChange('pt')">Português (pt)</button>
+                        </div>
+                    </div>
+                    <input id="yt-url" class="input font-poppins" type="text" name="link" placeholder="Enter the Youtube URL" required>
+                    <div class="dropdown">
+                        <span><i class="fa-solid fa-sliders fa-2x"></i></span>
+                        <div id="setting-dropdown-content" class="dropdown-content">
+                            <div class="mydict">
+                                <div class="font-poppins">
+                                    <p>Voiceover Gender</p>
+                                    <div class="d-flex">
+                                        <label>
+                                            <input type="radio" name="voiceoverGender" value="male" checked>
+                                            <span>Male</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="voiceoverGender" value="female">
+                                            <span>Female</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="font-poppins">
+                                    <p>Notes Language</p>
+                                    <div class="d-flex">
+                                        <label>
+                                            <input type="radio" name="notesLang" value="original" checked>
+                                            <span>Video's Language</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="notesLang" value="translated">
+                                            <span>Translated Language</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="replacePlayWithLoading(this)" type="submit" class="search-btn">
+                        <i class="search__icon fa-brands fa-youtube fa-2x"></i>
+                    </button>
+                </div>
+               
+            </div>
+            <div id="loading">
+
+            </div>
+        </form>
+        <div class="d-flex yt-samples">
+            <div class="sample">
+                <button onclick="addURL('1aA1WGON49E')"><img src="{% static 'img/1aA1WGON49E-thumbnail.jpg'%}" alt=""></button>
+                <button onclick="addURL('3bSVKNKb_PY')"><img src="{% static 'img/3bSVKNKb_PY-thumbnail.jpg'%}" alt=""></button>
+                <button onclick="addURL('JC82Il2cjqA')"><img src="{% static 'img/JC82Il2cjqA-thumbnail.jpg'%}" alt=""></button>
+            </div>
+        </div>
+    </div>
+    <section class="dashboard-image">
+        <img src="{% static 'img/dashboard.png' %}" alt="dashboard">
+    </section>
+{% endblock content %}
