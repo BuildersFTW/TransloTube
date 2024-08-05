@@ -237,7 +237,7 @@ def agetVoiceover(text, targetL, voiceID, file_path, speed=1.1):
         outfile.write(response.audio_content)
     return True
 
-def getVoiceover():
+def getVoiceover(a, b, c, d):
     client = texttospeech.TextToSpeechClient.from_service_account_json('vigilant-shift-387520-8b24c9f46e78.json')
     print('Got JSON')
     
