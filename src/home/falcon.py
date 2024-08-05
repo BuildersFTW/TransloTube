@@ -181,8 +181,7 @@ def getTranslatedTranscript(segments, originalLang, targetLang):
         })
     return translated_segments
 
-def agetVoiceover(text, targetL, voiceID, file_path, speed=1.1):
-    print(os.getcwd())
+def getVoiceover(text, targetL, voiceID, file_path, speed=1.1):
     client = texttospeech.TextToSpeechClient.from_service_account_json('./vigilant-shift-387520-8b24c9f46e78.json')
 
     voiceID = 'male' if voiceID == 1 else 'female'
@@ -209,8 +208,9 @@ def agetVoiceover(text, targetL, voiceID, file_path, speed=1.1):
         language_code=languages[targetL]['language_code'],
         name=languages[targetL][voiceID]
     )
-
+    print('Before Synthesize: ', text)
     synthesis_input = texttospeech.SynthesisInput(text=text)
+    print(synthesis_input)
     try:
         response = client.synthesize_speech(
             input=synthesis_input,
@@ -236,36 +236,6 @@ def agetVoiceover(text, targetL, voiceID, file_path, speed=1.1):
     with open(file_path, 'wb') as outfile:
         outfile.write(response.audio_content)
     return True
-
-def getVoiceover(a, b, c, d):
-    client = texttospeech.TextToSpeechClient.from_service_account_json('vigilant-shift-387520-8b24c9f46e78.json')
-    print('Got JSON')
-    
-    audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.LINEAR16,
-        speaking_rate=1.0
-    )
-
-    voice = texttospeech.VoiceSelectionParams(
-        language_code='hi-IN',
-        name='hi-IN-Wavenet-B'
-    )
-    print('Settings Done')
-    
-    print('Synthesizing...')
-    synthesis_input = texttospeech.SynthesisInput(text='Hi how are you')
-    print('Synthesized')
-
-
-    response = client.synthesize_speech(
-        input=synthesis_input,
-        voice=voice,
-        audio_config=audio_config
-    )
-    print('Responded')
-
-    with open('this_is_a_test_audio.mp3', 'wb') as outfile:
-        outfile.write(response.audio_content)
 
 def adjustAudioSpeed(audio_path, target_duration, text, targetL, voiceID):
     audio = AudioSegment.from_file(audio_path)
