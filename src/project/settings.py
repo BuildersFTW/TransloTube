@@ -28,7 +28,7 @@ DEBUG = False
 ALLOWED_HOSTS = ["localhost", ".shrinkro.com", "185.170.196.66", '127.0.0.1', '.ralgo.org']
 
 # In Django settings (settings.py)
-SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+#SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
 
 
 # Application definition
@@ -119,10 +119,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
-import os
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = BASE_DIR / 'static'
 
 
 # Default primary key field type
