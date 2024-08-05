@@ -446,6 +446,10 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
         except Exception as e:
             print("Error AudioSegment:", e)
             return False
+        except:
+            import sys
+            print("Unexpected Error:", sys.exc_info()[0], str(sys.exc_info()[2]))
+        
         combined_audio += silence_before + audio_segment
     voiceover_dir = f".\\static\\audio\\{videoID}_voiceover.mp3"
     combined_audio.export(voiceover_dir, format="mp3")
