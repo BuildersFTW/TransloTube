@@ -426,7 +426,8 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
     print("Stating voiceover")
     combined_audio = AudioSegment.silent(duration=0)
     print("in voiceover (translated Transcript): ", translatedTranscript)
-    for segment in translatedTranscript[:-1]:
+    for segment in translatedTranscript:
+        print("loop start")
         text = segment['text']
         start_time = segment['start'] * 1000  # Convert to milliseconds
         duration = segment['duration']
@@ -455,6 +456,7 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
             audio_segment = AudioSegment.from_file(temp_audio_path)
             print("after and before audio segment from file")
             silence_before = AudioSegment.silent(duration=start_time - len(combined_audio))
+            print("after silence before")
         except Exception as e:
             print("Error AudioSegment:", e)
             return False
@@ -463,6 +465,8 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
             print("Unexpected Error:", sys.exc_info()[0], str(sys.exc_info()[2]))
         
         combined_audio += silence_before + audio_segment
+    print("After for loop")
     voiceover_dir = f".\\static\\audio\\{videoID}_voiceover.mp3"
     combined_audio.export(voiceover_dir, format="mp3")
+    print("Exported")
 
