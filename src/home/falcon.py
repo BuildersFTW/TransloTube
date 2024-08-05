@@ -8,6 +8,7 @@ from dotenv import dotenv_values, load_dotenv
 import json
 import re
 from deep_translator import GoogleTranslator
+from google.api_core.exceptions import GoogleAPIError, InvalidArgument, PermissionDenied, Unauthenticated
 import os
 
 load_dotenv()
@@ -213,10 +214,20 @@ def getVoiceover(text, targetL, voiceID, file_path, speed=1.1):
             voice=voice,
             audio_config=audio_config
         )
-    except Exception as e:
-        print("Exception in Synthesize speech:", e)
+    except InvalidArgument as e:
+        print(f"Invalid argument error: {e}")
         return False
-    except:
+    except PermissionDenied as e:
+        print(f"Permission denied error: {e}")
+        return False
+    except Unauthenticated as e:
+        print(f"Unauthenticated error: {e}")
+        return False
+    except GoogleAPIError as e:
+        print(f"Google API error: {e}")
+        return False
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
         return False
 
     with open(file_path, 'wb') as outfile:
