@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-x))k06$we+et(ixx^)wa1&iv$hq$i@rj!76#e*_o^555l2!24w
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["localhost", ".shrinkro.com", "185.170.196.66", '127.0.0.1']
+ALLOWED_HOSTS = ["localhost", ".shrinkro.com", "185.170.196.66", '127.0.0.1', '.ralgo.org']
 
 # In Django settings (settings.py)
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
