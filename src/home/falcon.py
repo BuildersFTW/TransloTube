@@ -420,7 +420,7 @@ The text Content:\n
 
 
 def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, voiceID=1):
-    
+    print("Stating voiceover")
     combined_audio = AudioSegment.silent(duration=0)
     print("in voiceover (translated Transcript): ", translatedTranscript)
     for segment in translatedTranscript:
@@ -430,9 +430,11 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
 
         temp_audio_path = f".\\static\\audio\\{videoID}_temp_audio.mp3"
         try:
+            print("getVoiceover")
             status = getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
             if not status:
                 return False
+            print("Got Voiceover")
         except Exception as e:
             print("Error in GetVoiceover", e)
             return False
@@ -441,6 +443,9 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
         except Exception as e:
             print("Error in adjustAudioSpeed", e)
             return False
+        except:
+            import sys
+            print("Unexpected Error:", sys.exc_info()[0], str(sys.exc_info()[2]))
         try:
             audio_segment = AudioSegment.from_file(temp_audio_path)
 
