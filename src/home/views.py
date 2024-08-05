@@ -80,9 +80,12 @@ async def watch(request):
             target_language,
             0 if voiceover_gender == 'female' else 1
         )
-        if not status:
-            return HttpResponse("400 - Internal Error")
+        
         context['playVoiceover'] = "1"
+        if status == "SpeedError":
+            context['playVoiceover'] = "0"
+        elif not status:
+            return HttpResponse("400 - Internal Error")
     else:
         context['playVoiceover'] = "0"
 

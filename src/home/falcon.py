@@ -249,13 +249,14 @@ def adjustAudioSpeed(audio_path, target_duration, text, targetL, voiceID):
     #    adjusted_audio = audio.speedup(playback_speed=speed_change)
     #    adjusted_audio.export(audio_path, format="mp3")
     print("speed change", speed_change)
-
-    if speed_change > 1:
+    if speed_change > 8 or speed_change < 0.25:
+        print("Error: Speed Change > 8 or Speed Change < 0.25")
+        return False
+    elif speed_change > 1:
         getVoiceover(text, targetL, voiceID, audio_path, speed=speed_change)
     elif speed_change <= 0.9:
         getVoiceover(text, targetL, voiceID, audio_path, speed=0.9)
-    else:
-        print
+    
 
 
 
@@ -426,6 +427,7 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
     print("Stating voiceover")
     combined_audio = AudioSegment.silent(duration=0)
     print("in voiceover (translated Transcript): ", translatedTranscript)
+    print(os.getcwd())
     for segment in translatedTranscript:
         print("loop start")
         text = segment['text']
@@ -444,7 +446,9 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
             return False
         try:
             print("before adjust audio")
-            adjustAudioSpeed(temp_audio_path, duration, text, targetLanguage, voiceID)
+            status = adjustAudioSpeed(temp_audio_path, duration, text, targetLanguage, voiceID)
+            if status is False:
+                return "SpeedError"
         except Exception as e:
             print("Error in adjustAudioSpeed", e)
             return False
