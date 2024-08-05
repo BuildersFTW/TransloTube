@@ -216,6 +216,8 @@ def getVoiceover(text, targetL, voiceID, file_path, speed=1.1):
     except Exception as e:
         print("Exception in Synthesize speech:", e)
         return False
+    except:
+        return False
 
     with open(file_path, 'wb') as outfile:
         outfile.write(response.audio_content)
