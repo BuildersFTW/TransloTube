@@ -182,7 +182,7 @@ def getTranslatedTranscript(segments, originalLang, targetLang):
     return translated_segments
 
 def getVoiceover(text, targetL, voiceID, file_path, speed=1.1):
-    client = texttospeech.TextToSpeechClient.from_service_account_json('/vigilant-shift-387520-8b24c9f46e78.json')
+    client = texttospeech.TextToSpeechClient.from_service_account_json('vigilant-shift-387520-8b24c9f46e78.json')
 
     voiceID = 'male' if voiceID == 1 else 'female'
 
