@@ -423,7 +423,7 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
     print("Stating voiceover")
     combined_audio = AudioSegment.silent(duration=0)
     print("in voiceover (translated Transcript): ", translatedTranscript)
-    for segment in translatedTranscript:
+    for segment in translatedTranscript[:-1]:
         text = segment['text']
         start_time = segment['start'] * 1000  # Convert to milliseconds
         duration = segment['duration']
