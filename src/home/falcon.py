@@ -11,7 +11,7 @@ from deep_translator import GoogleTranslator
 
 
 config = dotenv_values('../.env')
-AI71_API_KEY = config['AI71_APIKEY']
+AI71_API_KEY = config['AI71_APIKEY_deploy']
 client = AI71(AI71_API_KEY)
 supportedLang = ['English', 'Hindi', 'Spanish', 'French', 'German', 'Chinese', 'Arabic', 'Italian', 'Russian', 'Japanese', 'Czech', 'Portuguese']
 
