@@ -71,6 +71,8 @@ async def watch(request):
     if original_lang != target_language:
         
         translated_transcript = await get_translated_transcript(grouped_sentences[:30], original_lang, target_language)
+        if not translated_transcript:
+            return HttpResponse("400 - Internal API Error")
         await get_voiceover(
             vid,
             translated_transcript,

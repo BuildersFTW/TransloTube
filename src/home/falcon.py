@@ -145,17 +145,20 @@ def falconTranslate(text, originalLang, targetLang):
 
     originalText = languages[originalLang]["text"]
     translatedText =  languages[targetLang]["text"]
-
-    res = client.chat.completions.create(
-        model="tiiuae/falcon-180B-chat",
-        max_tokens=512,
-        messages=[
-            {"role": "system", "content": "You are a translator fluent in the following languages: English, Hindi, Spanish, French, German, Chinese, Arabic Italian, Russian, Japanese, Czech, and Portuguese. Translate the given text into simple words that are easy to understand in an explanation style. Keep your responses as short as possible."},
-            {"role": "user", "content": f"Translate to {targetLang}: '{originalText}'"},
-            {"role": "assistant", "content": translatedText},
-            {"role": "user", "content": f"Translate to {targetLang}: '{text}'"},
-        ],
-    ).json()
+    try:
+        res = client.chat.completions.create(
+            model="tiiuae/falcon-180B-chat",
+            max_tokens=512,
+            messages=[
+                {"role": "system", "content": "You are a translator fluent in the following languages: English, Hindi, Spanish, French, German, Chinese, Arabic Italian, Russian, Japanese, Czech, and Portuguese. Translate the given text into simple words that are easy to understand in an explanation style. Keep your responses as short as possible."},
+                {"role": "user", "content": f"Translate to {targetLang}: '{originalText}'"},
+                {"role": "assistant", "content": translatedText},
+                {"role": "user", "content": f"Translate to {targetLang}: '{text}'"},
+            ],
+        ).json()
+    except Exception as e:
+        print(e)
+        return False
 
     translation = json.loads(res)['choices'][0]['message']['content']
     translation = translation.lstrip()
@@ -268,21 +271,27 @@ def askQnA(groupedSentences, messageHistory, userQn):
     # userQn - Question user asked at the end
     sentences = [entry['text'] for entry in groupedSentences]
 
-    systemPrompt = "You will be provided with a large text. Your task is to read and understand the text thoroughly, and then answer questions related to it. When answering questions, ensure your responses are accurate, concise and contextual. Here is the large text:"
+    systemPrompt = """You will be provided with a large text. Your task is to thoroughly read and understand the text, ensuring you grasp its main ideas, details, and context. Afterward, you will answer questions related to the text. When answering questions, ensure your responses are:
+
+Accurate: Provide precise and correct information based on the text.
+Concise: Keep your answers brief and to the point, without unnecessary elaboration.
+Contextual: Ensure your responses are relevant to the context of the text and the questions asked.
+Here is the large text:"""
     messages = [{"role": "system", "content": systemPrompt}]    # Default System Prompt for QnA
 
     # Adding all the Transcribe to Messages
     chunk_size = 5
     for i in range(0, len(sentences), chunk_size):
         chunk = sentences[i:i + chunk_size]
-        messages.append({"role": "user", "content": " ".join(chunk)})
+        #messages.append({"role": "user", "content": " ".join(chunk)})
+        messages[0]['content'] += " ".join(chunk)
 
     # Add stored message history
     #messages.extend(messageHistory)
     messages.append({"role": "user", "content": userQn})
 
     res = (client.chat.completions.create(
-        model="tiiuae/falcon-11b",
+        model="tiiuae/falcon-180B-chat",
         messages=messages)
     ).json()
 
@@ -398,7 +407,7 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
         start_time = segment['start'] * 1000  # Convert to milliseconds
         duration = segment['duration']
 
-        temp_audio_path = f".\\home\\static\\audio\\{videoID}_temp_audio.mp3"
+        temp_audio_path = f".\\static\\audio\\{videoID}_temp_audio.mp3"
         getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
 
         adjustAudioSpeed(temp_audio_path, duration, text, targetLanguage, voiceID)
@@ -406,6 +415,6 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
 
         silence_before = AudioSegment.silent(duration=start_time - len(combined_audio))
         combined_audio += silence_before + audio_segment
-    voiceover_dir = f".\\home\\static\\audio\\{videoID}_voiceover.mp3"
+    voiceover_dir = f".\\static\\audio\\{videoID}_voiceover.mp3"
     combined_audio.export(voiceover_dir, format="mp3")
 
