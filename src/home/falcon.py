@@ -408,12 +408,20 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
         duration = segment['duration']
 
         temp_audio_path = f".\\static\\audio\\{videoID}_temp_audio.mp3"
-        getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
+        try:
+            getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
+        except Exception as e:
+            print("Error in GetVoiceover", e)
+        try:
+            adjustAudioSpeed(temp_audio_path, duration, text, targetLanguage, voiceID)
+        except Exception as e:
+            print("Error in adjustAudioSpeed", e)
+        try:
+            audio_segment = AudioSegment.from_file(temp_audio_path)
 
-        adjustAudioSpeed(temp_audio_path, duration, text, targetLanguage, voiceID)
-        audio_segment = AudioSegment.from_file(temp_audio_path)
-
-        silence_before = AudioSegment.silent(duration=start_time - len(combined_audio))
+            silence_before = AudioSegment.silent(duration=start_time - len(combined_audio))
+        except Exception as e:
+            print("Error AudioSegment:", e)
         combined_audio += silence_before + audio_segment
     voiceover_dir = f".\\static\\audio\\{videoID}_voiceover.mp3"
     combined_audio.export(voiceover_dir, format="mp3")
