@@ -85,7 +85,6 @@ async def watch(request):
         context['playVoiceover'] = "1"
     else:
         context['playVoiceover'] = "0"
-    time.sleep(3)
 
     return render(request, 'watch.html', context)
 

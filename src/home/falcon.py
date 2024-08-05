@@ -469,4 +469,5 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
     voiceover_dir = f".\\static\\audio\\{videoID}_voiceover.mp3"
     combined_audio.export(voiceover_dir, format="mp3")
     print("Exported")
+    return True
 
