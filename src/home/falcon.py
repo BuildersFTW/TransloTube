@@ -248,7 +248,7 @@ def adjustAudioSpeed(audio_path, target_duration, text, targetL, voiceID):
     #    speed_change = 0.9
     #    adjusted_audio = audio.speedup(playback_speed=speed_change)
     #    adjusted_audio.export(audio_path, format="mp3")
-
+    
     if speed_change > 1:
         getVoiceover(text, targetL, voiceID, audio_path, speed=speed_change)
     elif speed_change <= 0.9:
