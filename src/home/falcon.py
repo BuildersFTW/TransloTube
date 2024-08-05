@@ -217,6 +217,7 @@ def getVoiceover(text, targetL, voiceID, file_path, speed=1.1):
             voice=voice,
             audio_config=audio_config
         )
+        print("Done synthesize speech")
     except InvalidArgument as e:
         print(f"Invalid argument error: {e}")
         return False
