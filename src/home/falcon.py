@@ -207,15 +207,19 @@ def getVoiceover(text, targetL, voiceID, file_path, speed=1.1):
     )
 
     synthesis_input = texttospeech.SynthesisInput(text=text)
-
-    response = client.synthesize_speech(
-        input=synthesis_input,
-        voice=voice,
-        audio_config=audio_config
-    )
+    try:
+        response = client.synthesize_speech(
+            input=synthesis_input,
+            voice=voice,
+            audio_config=audio_config
+        )
+    except Exception as e:
+        print("Exception in Synthesize speech:", e)
+        return False
 
     with open(file_path, 'wb') as outfile:
         outfile.write(response.audio_content)
+    return True
 
 def adjustAudioSpeed(audio_path, target_duration, text, targetL, voiceID):
     audio = AudioSegment.from_file(audio_path)
@@ -409,19 +413,24 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
 
         temp_audio_path = f".\\static\\audio\\{videoID}_temp_audio.mp3"
         try:
-            getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
+            status = getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
+            if not status:
+                return False
         except Exception as e:
             print("Error in GetVoiceover", e)
+            return False
         try:
             adjustAudioSpeed(temp_audio_path, duration, text, targetLanguage, voiceID)
         except Exception as e:
             print("Error in adjustAudioSpeed", e)
+            return False
         try:
             audio_segment = AudioSegment.from_file(temp_audio_path)
 
             silence_before = AudioSegment.silent(duration=start_time - len(combined_audio))
         except Exception as e:
             print("Error AudioSegment:", e)
+            return False
         combined_audio += silence_before + audio_segment
     voiceover_dir = f".\\static\\audio\\{videoID}_voiceover.mp3"
     combined_audio.export(voiceover_dir, format="mp3")

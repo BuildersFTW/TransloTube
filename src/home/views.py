@@ -73,13 +73,15 @@ async def watch(request):
         translated_transcript = await get_translated_transcript(grouped_sentences[:30], original_lang, target_language)
         if not translated_transcript:
             return HttpResponse("400 - Internal API Error")
-        await get_voiceover(
+        status = await get_voiceover(
             vid,
             translated_transcript,
             original_lang,
             target_language,
             0 if voiceover_gender == 'female' else 1
         )
+        if not status:
+            return HttpResponse("400 - Internal Error")
         context['playVoiceover'] = "1"
     else:
         context['playVoiceover'] = "0"
