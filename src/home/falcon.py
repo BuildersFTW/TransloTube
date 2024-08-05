@@ -4,14 +4,15 @@ from pydub import AudioSegment
 from google.cloud import texttospeech
 import numpy as np
 from ai71 import AI71
-from dotenv import dotenv_values
+from dotenv import dotenv_values, load_dotenv
 import json
 import re
 from deep_translator import GoogleTranslator
+import os
 
+load_dotenv()
 
-config = dotenv_values('../.env')
-AI71_API_KEY = config['AI71_APIKEY_deploy']
+AI71_API_KEY = os.getenv('AI71_APIKEY_deploy')
 client = AI71(AI71_API_KEY)
 supportedLang = ['English', 'Hindi', 'Spanish', 'French', 'German', 'Chinese', 'Arabic', 'Italian', 'Russian', 'Japanese', 'Czech', 'Portuguese']
 
