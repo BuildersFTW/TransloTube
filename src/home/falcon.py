@@ -4,7 +4,7 @@ from pydub import AudioSegment
 from google.cloud import texttospeech
 import numpy as np
 from ai71 import AI71
-from dotenv import dotenv_values, load_dotenv
+from dotenv import load_dotenv
 import json
 import re
 from deep_translator import GoogleTranslator
@@ -424,19 +424,19 @@ The text Content:\n
 
 
 def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, voiceID=1):
-    print("Stating voiceover")
+    print("Starting voiceover")
     combined_audio = AudioSegment.silent(duration=0)
-    print("in voiceover (translated Transcript): ", translatedTranscript)
+    print("In voiceover (translated Transcript): ", translatedTranscript)
     print(os.getcwd())
     for segment in translatedTranscript:
-        print("loop start")
+        print("Loop start")
         text = segment['text']
         start_time = segment['start'] * 1000  # Convert to milliseconds
         duration = segment['duration']
 
-        temp_audio_path = f".\\static\\audio\\{videoID}_temp_audio.mp3"
+        temp_audio_path = os.path.join("translotube", "Translotube-falcon", "src", "staticfiles", "audio", f"{videoID}_temp_audio.mp3")
         try:
-            print("getVoiceover")
+            print("GetVoiceover")
             status = getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
             if not status:
                 return False
@@ -445,7 +445,7 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
             print("Error in GetVoiceover", e)
             return False
         try:
-            print("before adjust audio")
+            print("Before adjust audio")
             status = adjustAudioSpeed(temp_audio_path, duration, text, targetLanguage, voiceID)
             if status is False:
                 return "SpeedError"
@@ -456,22 +456,21 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
             import sys
             print("Unexpected Error:", sys.exc_info()[0], str(sys.exc_info()[2]))
         try:
-            print("before audio segment from file")
+            print("Before audio segment from file")
             audio_segment = AudioSegment.from_file(temp_audio_path)
-            print("after and before audio segment from file")
+            print("After and before audio segment from file")
             silence_before = AudioSegment.silent(duration=start_time - len(combined_audio))
-            print("after silence before")
+            print("After silence before")
         except Exception as e:
             print("Error AudioSegment:", e)
             return False
         except:
             import sys
             print("Unexpected Error:", sys.exc_info()[0], str(sys.exc_info()[2]))
-        
+
         combined_audio += silence_before + audio_segment
     print("After for loop")
-    voiceover_dir = f".\\static\\audio\\{videoID}_voiceover.mp3"
+    voiceover_dir = os.path.join("translotube", "Translotube-falcon", "src", "staticfiles", "audio", f"{videoID}_final_audio.mp3")
     combined_audio.export(voiceover_dir, format="mp3")
     print("Exported")
     return True
-
