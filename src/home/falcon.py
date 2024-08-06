@@ -434,7 +434,7 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
         start_time = segment['start'] * 1000  # Convert to milliseconds
         duration = segment['duration']
 
-        temp_audio_path = os.path.join("staticfiles", "audio", f"{videoID}_temp_audio.mp3")
+        temp_audio_path = os.path.join("static", "audio", f"{videoID}_temp_audio.mp3")
         try:
             print("GetVoiceover")
             status = getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
@@ -470,7 +470,7 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
 
         combined_audio += silence_before + audio_segment
     print("After for loop")
-    voiceover_dir = os.path.join("staticfiles", "audio", f"{videoID}_voiceover.mp3")
+    voiceover_dir = os.path.join("static", "audio", f"{videoID}_voiceover.mp3")
     combined_audio.export(voiceover_dir, format="mp3")
     print("Exported")
     return True
