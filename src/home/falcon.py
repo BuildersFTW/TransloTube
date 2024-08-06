@@ -249,10 +249,10 @@ def adjustAudioSpeed(audio_path, target_duration, text, targetL, voiceID):
     #    adjusted_audio = audio.speedup(playback_speed=speed_change)
     #    adjusted_audio.export(audio_path, format="mp3")
     print("speed change", speed_change)
-    if speed_change > 8 or speed_change < 0.25:
-        print("Error: Speed Change > 8 or Speed Change < 0.25")
-        return False
-    elif speed_change > 1:
+    #if speed_change > 8 or speed_change < 0.25:
+    #    print("Error: Speed Change > 8 or Speed Change < 0.25")
+    #    return False
+    if speed_change > 1:
         getVoiceover(text, targetL, voiceID, audio_path, speed=speed_change)
     elif speed_change <= 0.9:
         getVoiceover(text, targetL, voiceID, audio_path, speed=0.9)
