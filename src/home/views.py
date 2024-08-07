@@ -59,6 +59,7 @@ async def watch(request):
 
 def task_status(request, task_id):
     task = TaskStatus.objects.get(task_id=task_id)
+    print(task.status)
     return JsonResponse({'status': task.status})
     
 def watch_webpage(request, task_id):

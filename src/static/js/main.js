@@ -33,6 +33,7 @@ function startTask() {
   )
     .then((response) => response.json())
     .then((data) => {
+      console.log(data);
       if (data.status === "Starting Voiceover Generation...") {
         pollTaskStatus(data.task_id);
         document.getElementById("taskStatus").innerText =
