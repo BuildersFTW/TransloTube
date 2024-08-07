@@ -57,10 +57,7 @@ async def watch(request):
 
 def task_status(request, task_id):
     status = task_statuses.get(task_id, 'Task not found')
-    if status == 'Completed':
-        return JsonResponse({'status': 'Completed'})
-    else:
-        return JsonResponse({'status': status})
+    return JsonResponse({'status': status})
     
 def watch_webpage(request, task_id):
     return render(request, 'watch.html', task_context[task_id])
