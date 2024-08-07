@@ -545,7 +545,10 @@ def start_voiceover_generation(vid, target_language, voiceover_gender, quizLang,
     import uuid
     task_id = str(uuid.uuid4())
     print("before creating task")
-    task, created = taskStatus.objects.get_or_create(task_id=task_id)
+    try:
+        task, created = taskStatus.objects.get_or_create(task_id=task_id)
+    except Exception as e:
+        print(e)
     print("after creating task")
     task.status = "Starting Voiceover Generation..."
     task.save()
