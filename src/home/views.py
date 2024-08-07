@@ -26,7 +26,7 @@ language_dict = {
 def home_page(request):
     return render(request, 'index.html')
 
-async def validate_parameters(request):
+def validate_parameters(request):
     yt_link = request.GET.get('link')
     target_language = request.GET.get('language')
     voiceover_gender = request.GET.get('voiceoverGender')
@@ -45,8 +45,8 @@ async def validate_parameters(request):
     return (vid, target_language_code, voiceover_gender, quizLang), None
 
 @csrf_exempt
-async def watch(request):
-    params, error = await validate_parameters(request)
+def watch(request):
+    params, error = validate_parameters(request)
     print("before error check")
     if error:
         return error
