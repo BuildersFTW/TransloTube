@@ -50,8 +50,8 @@ async def watch(request):
     if error:
         return error
     vid, target_language, voiceover_gender, quizLang = params
-    task, created = TaskStatus.objects.get_or_create(task_id=task_id)
-    task_id = start_voiceover_generation(vid, target_language, voiceover_gender, quizLang, task)
+    
+    task_id = start_voiceover_generation(vid, target_language, voiceover_gender, quizLang, TaskStatus)
 
     return JsonResponse({'status': 'Starting Voiceover Generation...', 'task_id': task_id})
 
