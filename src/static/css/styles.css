@@ -185,13 +185,13 @@ transition: all 0.3s;
 
 .content {
     gap: 1rem;
-    height: 100%;
+    height: calc(100vh - 7rem);
 }
 
 #player {
     border-radius: 0.5rem;
     height: 100%;
-    width: 800px;
+    width: 100%;
 }
 
 .summary-notes {
@@ -240,14 +240,14 @@ transition: all 0.3s;
     top: 1rem;
     height: 100%;
     box-sizing: border-box;
-    height: 100%;
-    flex: 1;
-    max-height: 493.33px;
+    width: 30%;
     background-color: #454545;
     border-radius: 0.5rem;
 }
 
-
+#iframe-container {
+    width: 70%;
+}
 
 .chatbox {
     padding: 0.75rem;
