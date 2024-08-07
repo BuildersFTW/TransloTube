@@ -4,7 +4,7 @@ from urllib.parse import urlparse, parse_qs
 from django.views.decorators.csrf import csrf_exempt
 import json
 from . import falcon
-from .falcon import task_results, task_statuses, task_context, start_voiceover_generation
+from .falcon import task_statuses, task_context, start_voiceover_generation
 
 # Create your views here.
 language_dict = {
@@ -56,10 +56,12 @@ async def watch(request):
 
 
 def task_status(request, task_id):
-    status = task_statuses.get(task_id, 'Task not found')
+    print(task_statuses)
+    status = task_statuses.get(task_id, '')
     return JsonResponse({'status': status})
     
 def watch_webpage(request, task_id):
+    print("IN WATCH WEBPAGE")
     return render(request, 'watch.html', task_context[task_id])
 
 @csrf_exempt
