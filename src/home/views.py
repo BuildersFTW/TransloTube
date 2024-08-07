@@ -44,7 +44,7 @@ async def validate_parameters(request):
 
     return (vid, target_language_code, voiceover_gender, quizLang), None
 
-
+@csrf_exempt
 async def watch(request):
     params, error = await validate_parameters(request)
     if error:
@@ -56,12 +56,13 @@ async def watch(request):
     return JsonResponse({'status': 'Starting Voiceover Generation...', 'task_id': task_id})
 
 
-
+@csrf_exempt
 def task_status(request, task_id):
     task = TaskStatus.objects.get(task_id=task_id)
     print(task.status)
     return JsonResponse({'status': task.status})
     
+@csrf_exempt
 def watch_webpage(request, task_id):
     task = TaskStatus.objects.get(task_id=task_id)
     return render(request, 'watch.html', task.context)
