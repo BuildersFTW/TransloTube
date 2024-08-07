@@ -47,12 +47,14 @@ async def validate_parameters(request):
 @csrf_exempt
 async def watch(request):
     params, error = await validate_parameters(request)
+    print("before error check")
     if error:
         return error
+    print("after error")
     vid, target_language, voiceover_gender, quizLang = params
     
     task_id = start_voiceover_generation(vid, target_language, voiceover_gender, quizLang, TaskStatus)
-
+    print("after start voiceover generation")
     return JsonResponse({'status': 'Starting Voiceover Generation...', 'task_id': task_id})
 
 
