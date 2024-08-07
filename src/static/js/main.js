@@ -73,7 +73,7 @@ function pollTaskStatus(taskId) {
         } else if (data.status === "Completed") {
           clearInterval(intervalId);
           window.location.href = `/video/${taskId}/`;
-          setupChat();
+
           // fetch(`/video/${taskId}/`, {
           //   method: "GET",
           // })

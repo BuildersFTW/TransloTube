@@ -1,10 +1,6 @@
 var chatInput = document.querySelector(".chat-input textarea");
 var sendChatBtn = document.querySelector(".chat-input button");
 var chatbox = document.querySelector(".chatbox");
-function setupChat() {
-  sendChatBtn.addEventListener("click", handleChat);
-  chatInput.addEventListener("keydown", enableEnterSendMessage);
-}
 
 const enableEnterSendMessage = function (e) {
   // Enter pressed
@@ -278,3 +274,6 @@ const handleChat = () => {
     chatInput.addEventListener("keydown", enableEnterSendMessage);
   }, 600);
 };
+
+sendChatBtn.addEventListener("click", handleChat);
+chatInput.addEventListener("keydown", enableEnterSendMessage);
