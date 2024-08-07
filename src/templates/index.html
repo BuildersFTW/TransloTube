@@ -49,11 +49,11 @@
                                     <p>Quiz Language</p>
                                     <div class="d-flex">
                                         <label>
-                                            <input type="radio" name="notesLang" value="original" checked>
+                                            <input type="radio" name="quizLang" value="original" checked>
                                             <span>Video's Language</span>
                                         </label>
                                         <label>
-                                            <input type="radio" name="notesLang" value="translated">
+                                            <input type="radio" name="quizLang" value="translated">
                                             <span>Translated Language</span>
                                         </label>
                                     </div>
@@ -61,12 +61,13 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="replacePlayWithLoading(this)" type="submit" class="search-btn">
+                    <button id="submitBtn" type="submit" class="search-btn">
                         <i class="search__icon fa-brands fa-youtube fa-2x"></i>
                     </button>
                 </div>
                
             </div>
+            <div id="taskStatus" class="font-poppins"></div>
             <div id="loading">
 
             </div>

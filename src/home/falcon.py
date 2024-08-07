@@ -11,6 +11,8 @@ from deep_translator import GoogleTranslator
 from google.api_core.exceptions import GoogleAPIError, InvalidArgument, PermissionDenied, Unauthenticated
 import os
 
+
+
 load_dotenv()
 
 AI71_API_KEY = os.getenv('AI71_APIKEY_deploy')
@@ -434,7 +436,7 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
         start_time = segment['start'] * 1000  # Convert to milliseconds
         duration = segment['duration']
 
-        temp_audio_path = os.path.join("static", "audio", f"{videoID}_temp_audio.mp3")
+        temp_audio_path = os.path.join("src", "static", "audio", f"{videoID}_temp_audio.mp3")
         try:
             print("GetVoiceover")
             status = getVoiceover(text, targetLanguage, voiceID, temp_audio_path)
@@ -470,7 +472,72 @@ def _getVoiceOver(videoID, translatedTranscript, originalLang, targetLanguage, v
 
         combined_audio += silence_before + audio_segment
     print("After for loop")
-    voiceover_dir = os.path.join("static", "audio", f"{videoID}_voiceover.mp3")
+    voiceover_dir = os.path.join("src", "static", "audio", f"{videoID}_voiceover.mp3")
     combined_audio.export(voiceover_dir, format="mp3")
     print("Exported")
     return True
+
+
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+task_statuses = {}
+task_context = {}
+task_results = {}
+executor = ThreadPoolExecutor(max_workers=2)
+
+
+def voiceover_generation(task_id, vid, target_language, voiceover_gender, quizLang):
+    
+    context = {'vid': vid, 'quizLang': quizLang}
+    context['targetLang'] = target_language
+    task_statuses[task_id] = "Fetching Transcript..."
+    transcript_response = getTranscript(vid)
+    if not transcript_response[0]:
+        task_statuses[task_id] = "Error: Transcript Not Found. Try Again?"
+        return
+    original_lang = transcript_response[0]
+    transcript = transcript_response[1]
+    
+
+    grouped_sentences = groupSentences(transcript)
+    context['groupedSentences'] = json.dumps(grouped_sentences)
+
+    if original_lang != target_language:
+        task_statuses[task_id] = "Translating Transcript..."
+        translated_transcript = getTranslatedTranscript(grouped_sentences, original_lang, target_language)
+        if not translated_transcript:
+            task_statuses[task_id] = "Error: API Error. Try again later"
+            return 
+        task_statuses[task_id] = "Generating Voiceover..."
+        status = _getVoiceOver(
+            vid,
+            translated_transcript,
+            original_lang,
+            target_language,
+            0 if voiceover_gender == 'female' else 1
+        )
+        
+        context['playVoiceover'] = "1"
+        if status == "SpeedError":
+            context['playVoiceover'] = "0"
+        elif not status:
+            task_statuses[task_id] = "Error: Internal Error"
+            return
+    else:
+        context['playVoiceover'] = "0"
+    task_statuses[task_id] = "Completed"
+    task_context[task_id] = context
+    
+
+
+
+from threading import Thread
+def start_voiceover_generation(vid, target_language, voiceover_gender, quizLang):
+    import uuid
+    task_id = str(uuid.uuid4())
+    thread = Thread(target=voiceover_generation, args=(task_id, vid, target_language, voiceover_gender, quizLang))
+    thread.start()
+    task_statuses[task_id] = "Starting Voiceover Generation..."
+    task_results[task_id] = thread
+    return task_id

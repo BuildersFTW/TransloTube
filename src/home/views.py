@@ -3,9 +3,8 @@ from django.http import HttpResponse, JsonResponse
 from urllib.parse import urlparse, parse_qs
 from django.views.decorators.csrf import csrf_exempt
 import json
-import time
 from . import falcon
-from asgiref.sync import sync_to_async
+from .falcon import task_results, task_statuses, task_context, start_voiceover_generation
 
 # Create your views here.
 language_dict = {
@@ -26,70 +25,45 @@ language_dict = {
 def home_page(request):
     return render(request, 'index.html')
 
-async def get_transcript(vid):
-    return await sync_to_async(falcon.getTranscript)(vid)
-
-async def get_translated_transcript(grouped_sentences, original_lang, target_lang):
-    return await sync_to_async(falcon.getTranslatedTranscript)(grouped_sentences, original_lang, target_lang)
-
-async def get_voiceover(vid, translated_transcript, original_lang, target_lang, voiceover_gender):
-    return await sync_to_async(falcon._getVoiceOver)(vid, translated_transcript, original_lang, target_lang, voiceover_gender)
-
-async def watch(request):
+async def validate_parameters(request):
     yt_link = request.GET.get('link')
     target_language = request.GET.get('language')
     voiceover_gender = request.GET.get('voiceoverGender')
+    quizLang = request.GET.get('quizLang')
     
-
     if not yt_link or not target_language:
-        return HttpResponse("400 - Bad Request: Missing 'link' or 'language' parameter")
+        return None, JsonResponse({"Error": "Missing 'link' or 'language' parameter"}, status=400)
 
-    target_language = language_dict.get(target_language)
-    if not target_language:
-        return HttpResponse("400 - Bad Request: Unsupported language")
-    
+    target_language_code = language_dict.get(target_language)
 
     try:
         vid = parse_qs(urlparse(yt_link).query)['v'][0]
     except KeyError:
-        return HttpResponse("400 - Bad Request: Invalid YouTube link")
+        return None, JsonResponse({"Error": "Invalid Youtube Link"}, status=400)
 
-    context = {'vid': vid}
-    context['targetLang'] = target_language
-    
-    transcript_response = await get_transcript(vid)
-    if not transcript_response[0]:
-        return HttpResponse("404 - Transcript not found")
+    return (vid, target_language_code, voiceover_gender, quizLang), None
 
-    original_lang = transcript_response[0]
-    transcript = transcript_response[1]
-    
 
-    grouped_sentences = falcon.groupSentences(transcript)
-    context['groupedSentences'] = json.dumps(grouped_sentences)
+async def watch(request):
+    params, error = await validate_parameters(request)
+    if error:
+        return error
+    vid, target_language, voiceover_gender, quizLang = params
+    task_id = start_voiceover_generation(vid, target_language, voiceover_gender, quizLang)
 
-    if original_lang != target_language:
-        
-        translated_transcript = await get_translated_transcript(grouped_sentences[:30], original_lang, target_language)
-        if not translated_transcript:
-            return HttpResponse("400 - Internal API Error")
-        status = await get_voiceover(
-            vid,
-            translated_transcript,
-            original_lang,
-            target_language,
-            0 if voiceover_gender == 'female' else 1
-        )
-        
-        context['playVoiceover'] = "1"
-        if status == "SpeedError":
-            context['playVoiceover'] = "0"
-        elif not status:
-            return HttpResponse("400 - Internal Error")
+    return JsonResponse({'status': 'Starting Voiceover Generation...', 'task_id': task_id})
+
+
+
+def task_status(request, task_id):
+    status = task_statuses.get(task_id, 'Task not found')
+    if status == 'Completed':
+        return JsonResponse({'status': 'Completed'})
     else:
-        context['playVoiceover'] = "0"
-
-    return render(request, 'watch.html', context)
+        return JsonResponse({'status': status})
+    
+def watch_webpage(request, task_id):
+    return render(request, 'watch.html', task_context[task_id])
 
 @csrf_exempt
 def chatbot(request):
@@ -115,9 +89,10 @@ def quiz(request):
             data = json.loads(request.body)
             groupedSentences = json.loads(data.get('groupedSentences'))
             targetLang = data.get('targetLang')
+            quizLang = targetLang if data.get('quizLang') == 'translated' else "English"
             
             # Process the message with your chatbot logic
-            response_message = falcon.quizMCQ(groupedSentences, targetLang)
+            response_message = falcon.quizMCQ(groupedSentences, quizLang)
             print(response_message)
             return JsonResponse({'content': response_message})
         except Exception as e:

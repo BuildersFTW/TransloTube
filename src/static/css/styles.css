@@ -587,6 +587,11 @@ md-block h1{
     font-size: medium;
 }
 
+#taskStatus {
+    text-align: center;
+    color: #eaeaea;
+    margin-bottom: 1rem;
+}
 
 .dots-container {
     position: relative;
