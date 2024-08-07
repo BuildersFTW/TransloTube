@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from . import falcon
 from .falcon import task_statuses, task_context, start_voiceover_generation
+from .models import TaskStatus
 
 # Create your views here.
 language_dict = {
@@ -49,20 +50,20 @@ async def watch(request):
     if error:
         return error
     vid, target_language, voiceover_gender, quizLang = params
-    task_id = start_voiceover_generation(vid, target_language, voiceover_gender, quizLang)
+    task, created = TaskStatus.objects.get_or_create(task_id=task_id)
+    task_id = start_voiceover_generation(vid, target_language, voiceover_gender, quizLang, task)
 
     return JsonResponse({'status': 'Starting Voiceover Generation...', 'task_id': task_id})
 
 
 
 def task_status(request, task_id):
-    print(task_statuses)
-    status = task_statuses.get(task_id, '')
-    return JsonResponse({'status': status})
+    task = TaskStatus.objects.get(task_id=task_id)
+    return JsonResponse({'status': task.status})
     
 def watch_webpage(request, task_id):
-    print("IN WATCH WEBPAGE")
-    return render(request, 'watch.html', task_context[task_id])
+    task = TaskStatus.objects.get(task_id=task_id)
+    return render(request, 'watch.html', task.context)
 
 @csrf_exempt
 def chatbot(request):

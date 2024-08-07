@@ -487,14 +487,16 @@ task_results = {}
 executor = ThreadPoolExecutor(max_workers=2)
 
 
-def voiceover_generation(task_id, vid, target_language, voiceover_gender, quizLang):
+def voiceover_generation(task_id, vid, target_language, voiceover_gender, quizLang, task):
     
     context = {'vid': vid, 'quizLang': quizLang}
     context['targetLang'] = target_language
-    task_statuses[task_id] = "Fetching Transcript..."
+    task.status = "Fetching Transcript..."
+    task.save()
     transcript_response = getTranscript(vid)
     if not transcript_response[0]:
-        task_statuses[task_id] = "Error: Transcript Not Found. Try Again?"
+        task.status = "Error: Transcript Not Found. Try Again?"
+        task.save()
         return
     original_lang = transcript_response[0]
     transcript = transcript_response[1]
@@ -504,12 +506,15 @@ def voiceover_generation(task_id, vid, target_language, voiceover_gender, quizLa
     context['groupedSentences'] = json.dumps(grouped_sentences)
 
     if original_lang != target_language:
-        task_statuses[task_id] = "Translating Transcript..."
+        task.status = "Translating Transcript..."
+        task.save()
         translated_transcript = getTranslatedTranscript(grouped_sentences, original_lang, target_language)
         if not translated_transcript:
-            task_statuses[task_id] = "Error: API Error. Try again later"
+            task.status = "Error: API Error. Try again later"
+            task.save()
             return 
-        task_statuses[task_id] = "Generating Voiceover..."
+        task.status = "Generating Voiceover..."
+        task.save()
         status = _getVoiceOver(
             vid,
             translated_transcript,
@@ -522,22 +527,26 @@ def voiceover_generation(task_id, vid, target_language, voiceover_gender, quizLa
         if status == "SpeedError":
             context['playVoiceover'] = "0"
         elif not status:
-            task_statuses[task_id] = "Error: Internal Error"
+            task.status = "Error: Internal Error"
+            task.save()
             return
+        
     else:
         context['playVoiceover'] = "0"
-    task_statuses[task_id] = "Completed"
-    task_context[task_id] = context
+    task.status = "Completed"
+    task.context = context
+    task.save()
     
 
 
 
 from threading import Thread
-def start_voiceover_generation(vid, target_language, voiceover_gender, quizLang):
+def start_voiceover_generation(vid, target_language, voiceover_gender, quizLang, taskStatus):
     import uuid
     task_id = str(uuid.uuid4())
-    task_statuses[task_id] = "Starting Voiceover Generation..."
-    thread = Thread(target=voiceover_generation, args=(task_id, vid, target_language, voiceover_gender, quizLang))
+    taskStatus.status = "Starting Voiceover Generation..."
+    taskStatus.save()
+    #task_statuses[task_id] = "Starting Voiceover Generation..."
+    thread = Thread(target=voiceover_generation, args=(task_id, vid, target_language, voiceover_gender, quizLang, task))
     thread.start()
-    task_results[task_id] = thread
     return task_id
