@@ -544,8 +544,9 @@ from threading import Thread
 def start_voiceover_generation(vid, target_language, voiceover_gender, quizLang, taskStatus):
     import uuid
     task_id = str(uuid.uuid4())
-    taskStatus.status = "Starting Voiceover Generation..."
-    taskStatus.save()
+    task, created = taskStatus.objects.get_or_create(task_id=task_id)
+    task.status = "Starting Voiceover Generation..."
+    task.save()
     #task_statuses[task_id] = "Starting Voiceover Generation..."
     thread = Thread(target=voiceover_generation, args=(task_id, vid, target_language, voiceover_gender, quizLang, task))
     thread.start()
