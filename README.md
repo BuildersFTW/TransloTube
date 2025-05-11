@@ -22,10 +22,6 @@ TransloTube is here to change that.
 2. **Choose Your Language**: Select the language you prefer, and the video will be translated accordingly.
 3. **Engage and Learn**: Use the interactive chat to dive deeper into the content or take an MCQ quiz to test your understanding.
 
-## 🚀 Demo
-
-Experience TransloTube in action! Check out our live demo: [TransloTube Demo](https://translotube.ralgo.org/)
-
 ## 🌟 Why TransloTube?
 
 The demand for accessible educational content is immense. With over 1 billion hours of YouTube content consumed daily, TransloTube meets this need by breaking down language barriers and enhancing global learning.
